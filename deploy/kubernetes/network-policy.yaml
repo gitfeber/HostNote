@@ -1,0 +1,79 @@
+# Network Policy: Restrict hostnote pod to only receive traffic from oauth2-proxy OR ingress-nginx
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hostnote-network-policy
+  namespace: hostnote
+spec:
+  podSelector:
+    matchLabels:
+      app: hostnote
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from oauth2-proxy in same namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app: oauth2-proxy-hostnote
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from ingress-nginx (traffic comes through ingress after auth check)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Network Policy: Allow oauth2-proxy to receive external traffic and talk to hostnote
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: oauth2-proxy-network-policy
+  namespace: hostnote
+spec:
+  podSelector:
+    matchLabels:
+      app: oauth2-proxy-hostnote
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4180
+  egress:
+    # Allow egress to hostnote service
+    - to:
+        - podSelector:
+            matchLabels:
+              app: hostnote
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow DNS resolution (required for GitHub OAuth)
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow egress to GitHub for OAuth (HTTPS)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443

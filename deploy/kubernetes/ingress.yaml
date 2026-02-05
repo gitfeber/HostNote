@@ -1,0 +1,111 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hostnote-static-ingress
+  namespace: hostnote
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod" # Example
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - hostnote.example.com # REPLACE ME
+      secretName: hostnote-tls
+  rules:
+    - host: hostnote.example.com # REPLACE ME
+      http:
+        paths:
+          # Static assets and public API endpoints bypass OAuth
+          - path: /site.webmanifest
+            pathType: Exact
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+          - path: /favicon.ico
+            pathType: Exact
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+          - path: /assets
+            pathType: Prefix
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+          - path: /api/public/[a-zA-Z0-9]+
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+          - path: /public/[a-zA-Z0-9]+
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hostnote-ingress
+  namespace: hostnote
+  annotations:
+    # Auth annotations - point to your OAuth2 Proxy service
+    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy-hostnote-service.hostnote.svc.cluster.local/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User, X-Auth-Request-Email, Set-Cookie"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod" # Example
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - hostnote.example.com # REPLACE ME
+      secretName: hostnote-tls
+  rules:
+    - host: hostnote.example.com # REPLACE ME
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hostnote-service
+                port:
+                  number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy-hostnote-ingress
+  namespace: hostnote
+  annotations:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod" # Example
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - hostnote.example.com # REPLACE ME
+      secretName: hostnote-tls
+  rules:
+    - host: hostnote.example.com # REPLACE ME
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy-hostnote-service
+                port:
+                  number: 80

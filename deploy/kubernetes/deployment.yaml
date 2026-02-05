@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hostnote
+  namespace: hostnote
+  labels:
+    app: hostnote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hostnote
+  template:
+    metadata:
+      labels:
+        app: hostnote
+    spec:
+      serviceAccountName: hostnote
+      securityContext:
+        runAsUser: 8888
+        runAsGroup: 8888
+        fsGroup: 8888
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: hostnote
+        image: docker.io/gitfeber/hostnote:latest 
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hostnote-encryption-secret
+              key: ENCRYPTION_KEY
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: hostnote-data
+          mountPath: /data
+      volumes:
+      - name: hostnote-data
+        persistentVolumeClaim:
+          claimName: hostnote-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hostnote-service
+  namespace: hostnote
+spec:
+  selector:
+    app: hostnote
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP

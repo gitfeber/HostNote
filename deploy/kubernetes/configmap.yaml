@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth2-proxy-auth-emails
+  namespace: hostnote
+data:
+  authorized_emails.txt: |
+    # Add authorized email addresses here, one per line
+    user@example.com

@@ -1,0 +1,57 @@
+{
+  "name": "hostnote",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A secure, multi-user code editor with GitHub OAuth authentication, built with React and Monaco Editor",
+  "author": "gitfeber",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gitfeber/hostnote.git"
+  },
+  "homepage": "https://github.com/gitfeber/hostnote#readme",
+  "bugs": {
+    "url": "https://github.com/gitfeber/hostnote/issues"
+  },
+  "keywords": [
+    "editor",
+    "monaco",
+    "code-editor",
+    "oauth",
+    "encryption",
+    "multi-user",
+    "react",
+    "docker",
+    "kubernetes"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "express": "^4.21.2",
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.2.2",
+    "vite": "^7.3.1"
+  },
+  "overrides": {
+    "cross-spawn": "^7.0.6",
+    "glob": "^11.1.0",
+    "brace-expansion": "^2.0.2",
+    "tar": "^7.5.7",
+    "diff": "^8.0.3"
+  }
+}

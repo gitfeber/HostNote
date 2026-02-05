@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy-hostnote
+  namespace: hostnote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy-hostnote
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy-hostnote
+    spec:
+      containers:
+      - name: oauth2-proxy-hostnote
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        imagePullPolicy: Always
+        args:
+          - "--provider=github"
+          - "--http-address=0.0.0.0:4180"
+          - "--redirect-url=https://hostnote.example.com/oauth2/callback" # REPLACE ME
+          - "--client-id=$(CLIENT_ID)"
+          - "--client-secret=$(CLIENT_SECRET)"
+          - "--cookie-secret=$(COOKIE_SECRET)"
+          - "--cookie-domain=hostnote.example.com" # REPLACE ME
+          - "--cookie-secure=true"
+          - "--cookie-httponly=true"
+          - "--cookie-samesite=lax"
+          - "--cookie-expire=1h"
+          - "--cookie-refresh=30m"
+          - "--upstream=http://hostnote-service:80"
+          - "--github-org=your-org" # REPLACE ME or use --email-domain
+          - "--authenticated-emails-file=/etc/oauth2-proxy/authorized_emails.txt"
+          - "--scope=read:org user:email"
+          - "--set-xauthrequest=true"
+          - "--skip-provider-button=true"
+          - "--set-authorization-header=true"
+          - "--email-domain=*"
+          - "--reverse-proxy=true"
+          - "--pass-access-token=false"
+          - "--pass-authorization-header=false"
+        envFrom:
+          - secretRef:
+              name: oauth2-proxy-hostnote-secret
+        ports:
+          - containerPort: 4180
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        volumeMounts:
+          - name: auth-emails
+            mountPath: /etc/oauth2-proxy
+      volumes:
+      - name: auth-emails
+        configMap:
+          name: oauth2-proxy-auth-emails
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy-hostnote-service
+  namespace: hostnote
+spec:
+  selector:
+    app: oauth2-proxy-hostnote
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 4180

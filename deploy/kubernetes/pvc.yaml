@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hostnote-data-pvc
+  namespace: hostnote
+  annotations:
+    description: "PVC for HostNote data"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: "standard" # Uncomment and set if you have a specific storage class

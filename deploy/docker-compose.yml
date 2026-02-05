@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  app:
+    build: 
+      context: ../..
+      dockerfile: Dockerfile
+    image: hostnote:latest
+    container_name: hostnote-app
+    restart: unless-stopped
+    environment:
+      - ENCRYPTION_KEY=replace_with_your_32_byte_hex_key_here
+      - NODE_ENV=production
+    volumes:
+      - ./data:/data
+    networks:
+      - hostnote-net
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
+    container_name: hostnote-auth
+    restart: unless-stopped
+    command:
+      - --http-address=0.0.0.0:4180
+      - --upstream=http://app:8080
+      # Configure for GitHub - Register a new OAuth App on GitHub
+      - --provider=github
+      - --client-id=your_github_client_id
+      - --client-secret=your_github_client_secret
+      # Or use mock for testing without GitHub
+      # - --provider=mock_oidc
+      # - --client-id=mock
+      # - --client-secret=mock
+      - --redirect-url=http://localhost:4180/oauth2/callback
+      - --cookie-secret=your_cookie_secret_at_least_16_bytes
+      - --cookie-secure=false # Set to true if using HTTPS
+      - --email-domain=*
+      # Map user headers
+      - --set-xauthrequest=true
+      - --pass-user-headers=true
+    ports:
+      - "4180:4180"
+    networks:
+      - hostnote-net
+    depends_on:
+      - app
+
+networks:
+  hostnote-net:
+    driver: bridge
